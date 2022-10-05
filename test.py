@@ -34,14 +34,13 @@ with st.spinner("Model is being loaded..."):
 with st.sidebar:
     sel = option_menu(
         menu_title="Navigation",
-        options=["Home", "Prediction","Get test images","Code"],
+        options=["Home", "Prediction","Get test images"],
         icons='house book download'.split(),
         menu_icon='cast',
         default_index=0,
         orientation='vertical'
     )
 
-# Read and resize the image
 def load_and_prep(file):
 
     file_bytes = np.asarray(bytearray(file.read()), dtype=np.uint8)
@@ -50,15 +49,13 @@ def load_and_prep(file):
 
     return img
 
-# Get top n predictions
 def get_n_predictions(pred_prob,n):
 
     pred_prob = np.squeeze(pred_prob)
     
-    top_n_max_idx = np.argsort(pred_prob)[::-1][:n] # Get index of top n predictions
-    top_n_max_val = list(pred_prob[top_n_max_idx])  # Get actual top n predictions
+    top_n_max_idx = np.argsort(pred_prob)[::-1][:n]
+    top_n_max_val = list(pred_prob[top_n_max_idx])
     
-    # Get the coresponding hindi character for top n predictions
     top_n_class_name=[]
     for i in top_n_max_idx:
         top_n_class_name.append(hindi_character[i])
@@ -74,45 +71,38 @@ def load_lottieurl(url: str):
         return None
     return r.json()
 
-
-###################################### Home Page ######################################
 if sel =='Home':
     lottie_hello = load_lottieurl("https://assets9.lottiefiles.com/packages/lf20_4asnmi1e.json") # Link for animated image
     st_lottie(lottie_hello)
     st.title("Hindi Character Recognition")
 
-###################################### Prediction Page ######################################
 if sel =='Prediction':
     # lottie_pred = load_lottieurl("https://assets9.lottiefiles.com/private_files/lf30_jz4fqbbk.json")
     # st_lottie(lottie_pred)
 
-    file = st.file_uploader(" ")  # From here we can upload an image
+    file = st.file_uploader("")
 
     if file is None:
         st.write("### Please Upload an Image that contain Hindi Character")
     else:
 
         img = load_and_prep(file)
-        
-        # Display the uploaded image
+
         fig,ax = plt.subplots()
         ax.imshow(img.numpy().astype('uint8'))
         ax.axis(False)
         st.pyplot(fig)
 
-        # Prediction for uploaded image
         pred_prob = model.predict(tf.expand_dims(img,axis=0))
         st.write("### Select the top n predictions")
         n=st.slider('n',min_value=1,max_value=5,value=3,step=1)
-
-        class_name , confidense = get_n_predictions(pred_prob,n) # Top n prediction with class name and confidence(Probabilty)
+        class_name , confidense = get_n_predictions(pred_prob,n)
 
         if st.button("Predict"):
 
 
             st.header(f"Top {n} Prediction for given image")
-            
-            # Horizontal bar chart for top n prediction with probability
+
             fig = go.Figure()
 
             fig.add_trace(go.Bar(
@@ -127,7 +117,9 @@ if sel =='Prediction':
 
             st.success(f"The image is classified as \t  \'{class_name[0]}\' \t with {confidense[0]*100:.1f} % probability")
 
-###################################### Download Page ######################################
+
+        # st.success(hindi_character[pred_prob.argmax()]+str(tf.reduce_max(pred_prob).numpy()))
+
 
 if sel =='Get test images':
     st.write('# Download the test images')
@@ -135,14 +127,56 @@ if sel =='Get test images':
     st_lottie(lottie_download)
 
     # https://stackoverflow.com/questions/71589690/streamlit-image-download-button
-    # How to make image download button, reference take from above link
-    
+    # For download button only, code is take from above link
+    # ------------------------------------------------------------------------------------
+    # char_name = 'ka kha ga dha da'.split()
+   
+    # flag = True
+    # for idx,char in enumerate(char_name):
+
+    #     col1 , col2 = st.columns(2)    
+
+    #     if flag:    
+
+    #         with col1:
+
+    #             st.download_button(
+    #                 label=f'Download the image of {char_name_hindi[idx]}',
+    #                 data = open(f'img/{char}.png', 'rb').read(),
+    #                 file_name=f"{char}.png",
+    #                 mime='image/png')
+            
+    #         flag=False
+    #     else:
+    #         with col2:
+    #             st.download_button(
+    #                 label=f'Download the image of {char_name_hindi[idx]}',
+    #                 data = open(f'img/{char}.png', 'rb').read(),
+    #                 file_name=f"{char}.png",
+    #                 mime='image/png')
+    #         flag=True
+# ------------------------------------------------------------------------------------------
+    # for idx in range(0,len(char_name)+1,2):
+
+    #     col1 , col2 = st.columns(2)
+
+    #     with col1:
+    #         st.download_button(
+    #                 label=f'Download the image of {char_name_hindi[idx]}',
+    #                 data = open(f'img/{char_name[idx]}.png', 'rb').read(),
+    #                 file_name=f"{char_name[idx]}.png",
+    #                 mime='image/png')
+    #     with col2:
+    #         st.download_button(
+    #                 label=f'Download the image of {char_name_hindi[idx+1]}',
+    #                 data = open(f'img/{char_name[idx+1]}.png', 'rb').read(),
+    #                 file_name=f"{char_name[idx+1]}.png",
+    #                 mime='image/png')
     char_name_hindi = '# क ख ग घ ङ च छ ज झ ञ ट ठ ड ढ ण त थ द ध न प फ ब भ म य र ल व श ष स ह ॠ त्र ज्ञ ० १ २ ३ ४ ५ ६ ७ ८ ९'.split() 
     for i in range(1,47):
 
         col1,col2 = st.columns(2)
 
-        # Left side display the button for image download
         with col1:
 
             st.download_button(
@@ -150,16 +184,7 @@ if sel =='Get test images':
                         data = open(f'img/{i}.png', 'rb').read(),
                         file_name=f"{i}.png",
                         mime='image/png')
-                        
-        # Right side display the original image
         with col2:
 
             img = Image.open(f'img/{i}.png')
             st.image(img)
-
-###################################### Code Page ######################################
-
-if sel =='Code':
-    with open('app.py','r',encoding="utf8") as f:
-        code = f.read()
-    st.code(code,'python')
